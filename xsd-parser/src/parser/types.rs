@@ -111,6 +111,20 @@ impl Struct {
 
         self.fields.borrow_mut().append(&mut fields);
 
+        let output_fields = self.fields.clone().into_inner();
+        *self.fields.borrow_mut() = output_fields.into_iter()
+            .map(|mut f| {
+                //TODO: remove this workaround for fields names clash
+                if matches!(f.source, StructFieldSource::Attribute) {
+                    if self.fields.borrow().iter().any(|field| field.name == f.name && !matches!(field.source, StructFieldSource::Attribute)) {
+                        f.name = format!("{}_attr", f.name);
+                    }
+                }
+
+                f
+            })
+            .collect::<Vec<StructField>>();
+
         for subtype in &self.subtypes {
             if let RsEntity::Struct(s) = subtype {
                 s.extend_base(types);
