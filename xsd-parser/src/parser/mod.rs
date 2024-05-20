@@ -9,6 +9,7 @@ mod complex_type;
 pub mod constants;
 mod element;
 mod extension;
+mod group;
 mod import;
 mod list;
 mod node_parser;
@@ -52,10 +53,16 @@ pub fn parse(text: &str) -> Result<RsFile, ()> {
             map.extend(st.get_types_map());
         }
     }
+    for ag in &schema_rs.groups {
+        if let RsEntity::Struct(st) = ag {
+            map.extend(st.get_types_map());
+        }
+    }
     for ty in &schema_rs.types {
         if let RsEntity::Struct(st) = ty {
             st.extend_base(&map);
             st.extend_attribute_group(&map);
+            st.extend_group(&map);
         }
     }
 

@@ -11,6 +11,7 @@ use crate::parser::{
     complex_type::parse_complex_type,
     element::parse_element,
     extension::parse_extension,
+    group::parse_group,
     import::parse_import,
     list::parse_list,
     restriction::parse_restriction,
@@ -43,7 +44,10 @@ pub fn parse_node(node: &Node, parent: &Node) -> RsEntity {
         SimpleContent => parse_simple_content(node),
         SimpleType => parse_simple_type(node, parent),
         Union => parse_union(node),
+        Group => parse_group(node, parent),
 
-        _ => unreachable!("Unsupported node:\n {:?}\nparent = {:?}\n", node, node.parent()),
+        ty => {
+            unreachable!("Unsupported node: {:?}\n {:?}\nparent = {:?}\n", ty, node, node.parent())
+        }
     }
 }

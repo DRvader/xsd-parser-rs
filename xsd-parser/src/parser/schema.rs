@@ -27,12 +27,18 @@ pub fn parse_schema<'input>(schema: &Node<'_, 'input>) -> RsFile<'input> {
                 n.is_element()
                     && n.xsd_type() != ElementType::Annotation
                     && n.xsd_type() != ElementType::AttributeGroup
+                    && n.xsd_type() != ElementType::Group
             })
             .map(|node| parse_node(&node, schema))
             .collect(),
         attribute_groups: schema
             .children()
             .filter(|n| n.is_element() && n.xsd_type() == ElementType::AttributeGroup)
+            .map(|node| parse_node(&node, schema))
+            .collect(),
+        groups: schema
+            .children()
+            .filter(|n| n.is_element() && n.xsd_type() == ElementType::Group)
             .map(|node| parse_node(&node, schema))
             .collect(),
     }

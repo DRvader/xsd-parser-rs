@@ -10,6 +10,7 @@ pub struct RsFile<'input> {
     pub namespace: Option<String>,
     pub types: Vec<RsEntity>,
     pub attribute_groups: Vec<RsEntity>,
+    pub groups: Vec<RsEntity>,
     pub target_ns: Option<Namespace<'input>>,
     pub xsd_ns: Option<Namespace<'input>>,
 }
@@ -20,6 +21,7 @@ pub struct Struct {
     pub comment: Option<String>,
     pub fields: RefCell<Vec<StructField>>,
     pub attribute_groups: RefCell<Vec<Alias>>,
+    pub groups: RefCell<Vec<Alias>>,
     pub subtypes: Vec<RsEntity>,
 }
 
@@ -57,6 +59,58 @@ impl Struct {
 
         self.fields.borrow_mut().retain(|field| field.name.as_str() != tag::BASE);
 
+        let mut fields = self
+            .groups
+            .borrow()
+            .iter()
+            .flat_map(|f| {
+                let key = f.original.split(':').last().unwrap().to_string();
+
+                if let Some(v) = types.get(&key) {
+                    v.extend_attribute_group(types)
+                }
+
+                types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+            })
+            .filter(|f| {
+                //TODO: remove this workaround for fields names clash
+                !self.fields.borrow().iter().any(|field| field.name == f.name)
+            })
+            .collect::<Vec<StructField>>();
+
+        self.fields.borrow_mut().append(&mut fields);
+
+        let mut fields = self
+            .attribute_groups
+            .borrow()
+            .iter()
+            .flat_map(|f| {
+                let key = f.original.split(':').last().unwrap().to_string();
+
+                if let Some(v) = types.get(&key) {
+                    v.extend_attribute_group(types)
+                }
+
+                types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+            })
+            .filter(|f| {
+                //TODO: remove this workaround for fields names clash
+                !self.fields.borrow().iter().any(|field| {
+                    field.name == f.name && matches!(field.source, StructFieldSource::Attribute)
+                })
+            })
+            .map(|mut f| {
+                //TODO: remove this workaround for fields names clash
+                if self.fields.borrow().iter().any(|field| field.name == f.name) {
+                    f.name = format!("{}_attr", f.name);
+                }
+
+                f
+            })
+            .collect::<Vec<StructField>>();
+
+        self.fields.borrow_mut().append(&mut fields);
+
         for subtype in &self.subtypes {
             if let RsEntity::Struct(s) = subtype {
                 s.extend_base(types);
@@ -71,11 +125,49 @@ impl Struct {
             .iter()
             .flat_map(|f| {
                 let key = f.original.split(':').last().unwrap().to_string();
+
+                if let Some(v) = types.get(&key) {
+                    v.extend_attribute_group(types)
+                }
+
                 types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+            })
+            .filter(|f| {
+                //TODO: remove this workaround for fields names clash
+                !self.fields.borrow().iter().any(|field| field.name == f.name)
             })
             .collect::<Vec<StructField>>();
 
         self.fields.borrow_mut().append(&mut fields);
+    }
+
+    pub fn extend_group(&self, types: &HashMap<&String, &Self>) {
+        let mut fields = self
+            .groups
+            .borrow()
+            .iter()
+            .flat_map(|f| {
+                let key = f.original.split(':').last().unwrap().to_string();
+
+                if let Some(v) = types.get(&key) {
+                    v.extend_attribute_group(types)
+                }
+
+                types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+            })
+            .filter(|f| {
+                //TODO: remove this workaround for fields names clash
+                !self.fields.borrow().iter().any(|field| field.name == f.name)
+            })
+            .collect::<Vec<StructField>>();
+
+        self.fields.borrow_mut().append(&mut fields);
+
+        for subtype in &self.subtypes {
+            if let RsEntity::Struct(s) = subtype {
+                s.extend_group(types);
+            }
+        }
     }
 }
 
@@ -163,6 +255,7 @@ pub struct EnumCase {
     pub type_name: Option<String>,
     pub type_modifiers: Vec<TypeModifier>,
     pub source: EnumSource,
+    pub subtypes: Vec<RsEntity>,
 }
 
 #[derive(Debug, Clone, Default)]

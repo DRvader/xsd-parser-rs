@@ -12,15 +12,17 @@ pub trait ValidateGenerator {}
 
 pub fn gen_validate_impl(name: &str, body: &str) -> String {
     if body.is_empty() {
-        format!(r#"impl Validate for {name} {{}}"#, name = name)
+        format!(
+            r#"impl Validate for {name} {{}}"#,
+            name = name
+        )
     } else {
         format!(
             r#"impl Validate for {name} {{
-    fn validate(&self) -> Result<(), String> {{ {body}
+    fn validate(&self) -> Result<(), std::string::String> {{ {body}
         Ok(())
     }}
-}}
-"#,
+}}"#,
             name = name,
             body = body
         )

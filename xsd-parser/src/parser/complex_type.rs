@@ -7,6 +7,7 @@ use crate::parser::{
     types::{RsEntity, Struct, StructField, StructFieldSource},
     utils::{
         attribute_groups_to_aliases, attributes_to_fields, get_documentation, get_parent_name,
+        groups_to_aliases,
     },
     xsd_elements::{ElementType, XsdNode},
 };
@@ -43,6 +44,7 @@ pub fn parse_complex_type(node: &Node, parent: &Node) -> RsEntity {
         return RsEntity::Struct(Struct {
             fields: RefCell::new(fields),
             attribute_groups: RefCell::new(attribute_groups_to_aliases(node)),
+            groups: RefCell::new(groups_to_aliases(node)),
             comment: get_documentation(node),
             subtypes: vec![],
             name: name.to_string(),
@@ -51,10 +53,20 @@ pub fn parse_complex_type(node: &Node, parent: &Node) -> RsEntity {
     let content_node = content.unwrap();
 
     let mut res = parse_node(&content_node, node);
+    let docs = get_documentation(node);
     match &mut res {
         RsEntity::Struct(st) => {
             st.fields.borrow_mut().append(&mut fields);
             st.name = name.to_string();
+            st.attribute_groups.borrow_mut().extend(attribute_groups_to_aliases(node));
+            st.groups.borrow_mut().extend(groups_to_aliases(node));
+            if let Some(docs) = docs {
+                st.comment = if let Some(existing) = st.comment.take() {
+                    Some(format!("{docs}\n{existing}"))
+                } else {
+                    Some(docs)
+                };
+            }
         }
         RsEntity::Enum(en) => {
             en.name = format!("{}Choice", name);
@@ -70,6 +82,7 @@ pub fn parse_complex_type(node: &Node, parent: &Node) -> RsEntity {
                 comment: get_documentation(node),
                 fields: RefCell::new(fields),
                 attribute_groups: RefCell::new(attribute_groups_to_aliases(node)),
+                groups: RefCell::new(groups_to_aliases(node)),
             })];
         }
         _ => (),

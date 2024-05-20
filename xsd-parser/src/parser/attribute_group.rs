@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use roxmltree::Node;
 
 use crate::parser::{
@@ -6,6 +8,8 @@ use crate::parser::{
     utils::get_documentation,
     xsd_elements::{ElementType, XsdNode},
 };
+
+use super::utils::attribute_groups_to_aliases;
 
 pub fn parse_attribute_group(node: &Node, parent: &Node) -> RsEntity {
     if parent.xsd_type() == ElementType::Schema {
@@ -30,7 +34,9 @@ fn parse_global_attribute_group(node: &Node) -> RsEntity {
 
     RsEntity::Struct(Struct {
         name: name.to_string(),
+        comment: get_documentation(node),
         fields: std::cell::RefCell::new(fields),
+        attribute_groups: RefCell::new(attribute_groups_to_aliases(node)),
         ..Default::default()
     })
 }

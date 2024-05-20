@@ -6,7 +6,10 @@ use crate::parser::{
     constants::{attribute, tag},
     node_parser::parse_node,
     types::{RsEntity, Struct, StructField, StructFieldSource},
-    utils::{attribute_groups_to_aliases, attributes_to_fields, get_base, get_documentation},
+    utils::{
+        attribute_groups_to_aliases, attributes_to_fields, get_base, get_documentation,
+        groups_to_aliases,
+    },
     xsd_elements::{ElementType, ExtensionType, XsdNode},
 };
 
@@ -46,6 +49,7 @@ fn simple_content_extension(node: &Node) -> RsEntity {
         comment: get_documentation(node),
         fields: RefCell::new(fields),
         attribute_groups: RefCell::new(attribute_groups_to_aliases(node)),
+        groups: RefCell::new(groups_to_aliases(node)),
     })
 }
 
@@ -84,6 +88,7 @@ fn complex_content_extension(node: &Node) -> RsEntity {
         comment: get_documentation(node),
         fields: RefCell::new(fields),
         attribute_groups: RefCell::new(attribute_groups_to_aliases(node)),
+        groups: RefCell::new(groups_to_aliases(node)),
         ..Default::default()
     })
 }

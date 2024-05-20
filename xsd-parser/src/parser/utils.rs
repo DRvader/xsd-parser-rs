@@ -68,6 +68,16 @@ pub fn attribute_groups_to_aliases(node: &Node) -> Vec<Alias> {
         .collect()
 }
 
+pub fn groups_to_aliases(node: &Node) -> Vec<Alias> {
+    node.children()
+        .filter(|n| n.xsd_type() == ElementType::Group)
+        .map(|n| match parse_node(&n, node) {
+            RsEntity::Alias(a) => a,
+            _ => unreachable!("Invalid attribute group parsing: {:?}", n),
+        })
+        .collect()
+}
+
 pub fn enum_to_field(en: Enum) -> StructField {
     StructField {
         name: en.name.clone(),

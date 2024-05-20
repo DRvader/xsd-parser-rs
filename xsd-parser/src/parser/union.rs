@@ -14,31 +14,28 @@ pub fn parse_union(union: &Node) -> RsEntity {
     let mut cases =
         union.attribute(attribute::MEMBER_TYPES).map(create_enum_cases).unwrap_or_default();
 
-    let subtypes = union
-        .children()
-        .filter(|e| e.is_element() && e.xsd_type() == ElementType::SimpleType)
-        .enumerate()
-        .map(|st| enum_subtype_from_node(&st.1, union, st.0))
-        .collect::<Vec<RsEntity>>();
-
-    cases.append(
-        &mut subtypes
-            .iter()
+    cases.extend(
+        union
+            .children()
+            .filter(|e| e.is_element() && e.xsd_type() == ElementType::SimpleType)
             .enumerate()
-            .map(|val| EnumCase {
-                name: format!("EnumCase_{}", val.0),
-                type_name: Some(val.1.name().to_string()),
-                source: EnumSource::Union,
-                ..Default::default()
-            })
-            .collect(),
+            .map(|st| {
+                let subtype = enum_subtype_from_node(&st.1, union, st.0);
+                EnumCase {
+                    name: format!("EnumCase_{}", st.0),
+                    type_name: Some(subtype.name().to_string()),
+                    source: EnumSource::Union,
+                    subtypes: vec![subtype],
+                    ..Default::default()
+                }
+            }),
     );
 
     let mut union_enum = Enum {
         cases,
-        subtypes,
+        subtypes: vec![],
         comment: get_documentation(union),
-        type_name: "String".into(),
+        type_name: "std::string::String".into(),
         source: EnumSource::Union,
         ..Default::default()
     };
@@ -157,8 +154,12 @@ mod test {
                 assert_eq!(en.cases[3].type_name.as_ref().unwrap(), "EnumCaseType_1");
                 assert_eq!(en.cases[4].type_name.as_ref().unwrap(), "EnumCaseType_2");
 
-                assert_eq!(en.subtypes.len(), 3);
-                assert_eq!(en.subtypes[0].name(), "EnumCaseType_0");
+                assert_eq!(en.cases[2].subtypes.len(), 1);
+                assert_eq!(en.cases[2].subtypes[0].name(), "EnumCaseType_0");
+                assert_eq!(en.cases[3].subtypes.len(), 1);
+                assert_eq!(en.cases[3].subtypes[0].name(), "EnumCaseType_1");
+                assert_eq!(en.cases[4].subtypes.len(), 1);
+                assert_eq!(en.cases[4].subtypes[0].name(), "EnumCaseType_2");
                 assert_eq!(en.name, String::default());
             }
             _ => unreachable!("Test Failed"),
@@ -218,8 +219,13 @@ mod test {
                 assert_eq!(en.cases[3].type_name.as_ref().unwrap(), "EnumCaseType_1");
                 assert_eq!(en.cases[4].type_name.as_ref().unwrap(), "EnumCaseType_2");
 
-                assert_eq!(en.subtypes.len(), 3);
-                assert_eq!(en.subtypes[0].name(), "EnumCaseType_0");
+                assert_eq!(en.cases[2].subtypes.len(), 1);
+                assert_eq!(en.cases[2].subtypes[0].name(), "EnumCaseType_0");
+                assert_eq!(en.cases[3].subtypes.len(), 1);
+                assert_eq!(en.cases[3].subtypes[0].name(), "EnumCaseType_1");
+                assert_eq!(en.cases[4].subtypes.len(), 1);
+                assert_eq!(en.cases[4].subtypes[0].name(), "EnumCaseType_2");
+
                 assert_eq!(en.name, "SomeTypeChoice");
             }
             _ => unreachable!("Test Failed"),

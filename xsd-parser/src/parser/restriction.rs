@@ -120,6 +120,7 @@ fn cases(facets: &[Facet]) -> Vec<EnumCase> {
                 type_name: None,
                 type_modifiers: vec![],
                 source: EnumSource::Restriction,
+                subtypes: vec![],
             }),
             _ => None,
         })

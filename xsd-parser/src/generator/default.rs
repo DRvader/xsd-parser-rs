@@ -22,6 +22,11 @@ pub fn default_format_name(name: &str) -> String {
 }
 
 pub fn default_format_type(type_name: &str, target_ns: &Option<Namespace>) -> Cow<'static, str> {
+    // Probably a Rust Type
+    if type_name.contains("::") {
+        return sanitize(type_name.to_string()).into();
+    }
+
     let (prefix, name) = split_name(type_name);
     let option_tns = target_ns.as_ref().and_then(|ns| ns.name());
 

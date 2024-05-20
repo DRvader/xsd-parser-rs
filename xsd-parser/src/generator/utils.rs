@@ -25,8 +25,8 @@ pub fn match_built_in_type(type_name: &str, xsd_ns: &Option<Namespace>) -> Optio
         return None;
     }
     let res = match name {
-        "hexBinary" => "String",
-        "base64Binary" => "String",
+        "hexBinary" => "std::string::String",
+        "base64Binary" => "std::string::String",
 
         "boolean" => "bool",
 
@@ -64,27 +64,27 @@ pub fn match_built_in_type(type_name: &str, xsd_ns: &Option<Namespace>) -> Optio
         "gYear" => "xs::GYear",
         "gYearMonth" => "xs::GYearMonth",
 
-        "string" => "String",
-        "normalizedString" => "String",
-        "token" => "String",
-        "language" => "String",
-        "Name" => "String",
-        "NCName" => "String",
-        "ENTITY" => "String",
-        "ID" => "String",
-        "IDREF" => "String",
-        "NMTOKEN" => "String",
-        "anyURI" => "String",
-        "QName" => "String",
+        "string" => "std::string::String",
+        "normalizedString" => "std::string::String",
+        "token" => "std::string::String",
+        "language" => "std::string::String",
+        "Name" => "std::string::String",
+        "NCName" => "std::string::String",
+        "ENTITY" => "std::string::String",
+        "ID" => "std::string::String",
+        "IDREF" => "std::string::String",
+        "NMTOKEN" => "std::string::String",
+        "anyURI" => "std::string::String",
+        "QName" => "std::string::String",
 
-        "NOTATION" => "String",
+        "NOTATION" => "std::string::String",
 
-        "anySimpleType" => "String",
+        "anySimpleType" => "std::string::String",
 
         // Built-in list types:
-        "ENTITIES" => "Vec<String>",
-        "IDREFS" => "Vec<String>",
-        "NMTOKENS" => "Vec<String>",
+        "ENTITIES" => "Vec<std::string::String>",
+        "IDREFS" => "Vec<std::string::String>",
+        "NMTOKENS" => "Vec<std::string::String>",
         _ => "",
     };
 

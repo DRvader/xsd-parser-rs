@@ -44,6 +44,7 @@ fn parse_case_of_choice(element: &Node) -> RsEntity {
             comment: get_documentation(element),
             type_modifiers: vec![element_modifier(element)],
             source: EnumSource::Choice,
+            subtypes: Vec::new(),
         });
     }
 
@@ -57,6 +58,7 @@ fn parse_case_of_choice(element: &Node) -> RsEntity {
             comment: get_documentation(element),
             type_modifiers: vec![element_modifier(element)],
             source: EnumSource::Choice,
+            subtypes: Vec::new(),
         });
     }
 
@@ -67,6 +69,7 @@ fn parse_case_of_choice(element: &Node) -> RsEntity {
         comment: get_documentation(element),
         type_modifiers: vec![element_modifier(element)],
         source: EnumSource::Choice,
+        subtypes: Vec::new(),
     })
 }
 

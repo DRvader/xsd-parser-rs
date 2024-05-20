@@ -18,7 +18,7 @@ pub fn parse_choice(choice: &Node) -> RsEntity {
 
     RsEntity::Enum(Enum {
         cases: enum_cases,
-        type_name: "String".to_string(),
+        type_name: "std::string::String".to_string(),
         source: EnumSource::Choice,
         ..Default::default()
     })

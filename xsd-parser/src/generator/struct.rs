@@ -23,7 +23,11 @@ pub trait StructGenerator {
 
         entity.fields.borrow_mut().iter_mut().for_each(|f| {
             if !f.subtypes.is_empty() {
-                f.type_name = format!("{}::{}", mod_name, f.type_name)
+                f.type_name = format!(
+                    "{}::{}",
+                    mod_name,
+                    gen.base().format_type_name(f.type_name.as_str(), gen)
+                )
             }
         });
 
@@ -95,7 +99,7 @@ pub trait StructGenerator {
                     uri = tn.uri()
                 ),
             },
-            None => format!("{derives}#[yaserde()]\n", derives = derives),
+            None => format!("{derives}", derives = derives),
         }
         .into()
     }
