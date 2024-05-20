@@ -60,7 +60,7 @@ pub trait StructGenerator {
 
         if !field_subtypes.is_empty() || !subtypes.is_empty() {
             format!(
-                "\npub mod {name} {{\n{indent}use super::*;{st}\n{fst}\n}}\n",
+                "\npub mod {name} {{\n{indent}use super::*;\n{st}\n{fst}\n}}\n",
                 name = self.mod_name(entity, gen),
                 st = subtypes,
                 indent = gen.base().indent(),

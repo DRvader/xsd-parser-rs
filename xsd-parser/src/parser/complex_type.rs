@@ -74,18 +74,20 @@ pub fn parse_complex_type(node: &Node, parent: &Node) -> RsEntity {
                 name: en.name.clone(),
                 type_name: en.name.clone(),
                 source: StructFieldSource::Choice,
+                subtypes: vec![RsEntity::Enum(en.clone())],
                 ..Default::default()
             });
-            en.subtypes = vec![RsEntity::Struct(Struct {
+            res = RsEntity::Struct(Struct {
                 name: name.to_string(),
                 subtypes: vec![],
                 comment: get_documentation(node),
                 fields: RefCell::new(fields),
                 attribute_groups: RefCell::new(attribute_groups_to_aliases(node)),
                 groups: RefCell::new(groups_to_aliases(node)),
-            })];
+            });
         }
         _ => (),
     };
+
     res
 }
