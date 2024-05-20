@@ -21,5 +21,6 @@ text-diff = "0.4"
 xml-rs = "0.8"
 xsd-macro-utils = { path = "../xsd-macro-utils" }
 xsd-types = { path = "../xsd-types" }
-yaserde = "0.7"
-yaserde_derive = "0.7"
+
+yaserde = {path = "../../yaserde/yaserde"}
+yaserde_derive = {path = "../../yaserde/yaserde_derive"}

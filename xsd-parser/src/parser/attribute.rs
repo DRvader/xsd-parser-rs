@@ -18,7 +18,8 @@ pub fn parse_attribute(node: &Node, parent: &Node) -> RsEntity {
         .expect("All attributes have name or ref")
         .to_string();
 
-    let type_name = node.attr_type().or_else(|| node.attr_ref()).unwrap_or("String").to_string();
+    let type_name =
+        node.attr_type().or_else(|| node.attr_ref()).unwrap_or("std::string::String").to_string();
 
     let type_modifier = match node.attr_use() {
         UseType::Optional => TypeModifier::Option,

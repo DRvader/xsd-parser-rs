@@ -9,7 +9,10 @@ use crate::parser::{
     xsd_elements::{ElementType, XsdNode},
 };
 
-use super::utils::{attribute_groups_to_aliases, groups_to_aliases};
+use super::{
+    element::element_modifier,
+    utils::{attribute_groups_to_aliases, groups_to_aliases},
+};
 
 pub fn parse_sequence(sequence: &Node, parent: &Node) -> RsEntity {
     let name = get_parent_name(sequence);
@@ -56,7 +59,9 @@ fn elements_to_fields(sequence: &Node, parent_name: &str) -> Vec<StructField> {
             RsEntity::Struct(st) => StructField {
                 name: st.name.clone(),
                 type_name: st.name.clone(),
+                source: super::types::StructFieldSource::Sequence,
                 subtypes: vec![RsEntity::Struct(st)],
+                type_modifiers: vec![element_modifier(&n)],
                 ..Default::default()
             },
             _ => unreachable!("\nError: {:?}\n{:?}", n, parse_node(&n, sequence)),

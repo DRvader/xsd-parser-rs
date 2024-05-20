@@ -6,7 +6,16 @@ use crate::{
 pub trait EnumCaseGenerator {
     fn generate(&self, entity: &EnumCase, gen: &Generator) -> String {
         let typename = if entity.type_name.is_some() {
-            format!("({})", self.get_type_name(entity, gen))
+            let mut output = format!("({})", self.get_type_name(entity, gen));
+            if let Some(name) = &entity.type_name {
+                // This would be incorrectly treated as std::string::String
+                if name == "string" {
+                    output =
+                        format!("(#[yaserde(force_struct)] {})", self.get_type_name(entity, gen));
+                }
+            }
+
+            output
         } else {
             "".into()
         };
@@ -15,7 +24,7 @@ pub trait EnumCaseGenerator {
             indent = gen.base().indent(),
             name = self.get_name(entity, gen),
             comment = self.format_comment(entity, gen),
-            macros = self.macros(entity, gen),
+            macros = self.macros(entity, gen, ""),
             typename = typename
         )
     }
@@ -37,7 +46,7 @@ pub trait EnumCaseGenerator {
         gen.base().format_comment(entity.comment.as_deref(), gen.base().indent_size())
     }
 
-    fn macros(&self, entity: &EnumCase, gen: &Generator) -> String {
+    fn macros(&self, entity: &EnumCase, gen: &Generator, extra: &str) -> String {
         if entity.source == EnumSource::Union {
             return "".into();
         }
@@ -45,17 +54,21 @@ pub trait EnumCaseGenerator {
         let (prefix, field_name) = split_name(entity.name.as_str());
         match prefix {
             Some(p) => format!(
-                "{indent}#[yaserde(prefix = \"{prefix}\", rename = \"{rename}\")]\n",
+                "{indent}#[yaserde(prefix = \"{prefix}\", rename = \"{rename}\"{extra})]\n",
                 indent = gen.base().indent(),
                 prefix = p,
                 rename = field_name
             ),
             None => {
                 if field_name == self.get_name(entity, gen) {
-                    "".into()
+                    if extra.len() > 0 {
+                        format!("{indent}#[yaserde({extra})]", indent = gen.base().indent())
+                    } else {
+                        "".into()
+                    }
                 } else {
                     format!(
-                        "{indent}#[yaserde(rename = \"{rename}\")]\n",
+                        "{indent}#[yaserde(rename = \"{rename}\"{extra})]\n",
                         indent = gen.base().indent(),
                         rename = field_name
                     )

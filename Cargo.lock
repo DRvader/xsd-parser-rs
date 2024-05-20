@@ -204,12 +204,9 @@ dependencies = [
 
 [[package]]
 name = "heck"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
-dependencies = [
- "unicode-segmentation",
-]
+checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 
 [[package]]
 name = "heck"
@@ -430,12 +427,6 @@ name = "unicode-ident"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4c87d22b6e3f4a18d4d40ef354e97c90fcb14dd91d7dc0aa9d8a1172ebf7202"
 
 [[package]]
 name = "unicode-width"
@@ -667,9 +658,7 @@ dependencies = [
 
 [[package]]
 name = "yaserde"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2776ec5bb20e76d89268e87e1ea66c078b94f55e9771e4d648adda3019f87fc"
+version = "0.10.0"
 dependencies = [
  "log",
  "xml-rs",
@@ -677,11 +666,9 @@ dependencies = [
 
 [[package]]
 name = "yaserde_derive"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c0b0a4701f203ebaecce4971a6bb8575aa07b617bdc39ddfc6ffeff3a38530d"
+version = "0.10.0"
 dependencies = [
- "heck 0.3.3",
+ "heck 0.4.1",
  "log",
  "proc-macro2",
  "quote",

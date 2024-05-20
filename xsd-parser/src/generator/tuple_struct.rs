@@ -5,7 +5,7 @@ use crate::{
         validator::{gen_facet_validation, gen_validate_impl},
         Generator,
     },
-    parser::types::TupleStruct,
+    parser::{types::TupleStruct, xsd_elements::FacetType},
 };
 
 pub trait TupleStructGenerator {
@@ -38,8 +38,26 @@ pub trait TupleStructGenerator {
         gen.base().format_type_name(entity.name.as_str(), gen).into()
     }
 
-    fn macros(&self, _entity: &TupleStruct, _gen: &Generator) -> Cow<'static, str> {
-        "#[derive(Default, PartialEq, Debug, UtilsTupleIo, UtilsDefaultSerde)]\n".into()
+    fn macros(&self, entity: &TupleStruct, _gen: &Generator) -> Cow<'static, str> {
+        let extra = if entity.facets.iter().any(|f| {
+            matches!(
+                f.facet_type,
+                FacetType::MinExclusive(_)
+                    | FacetType::MaxExclusive(_)
+                    | FacetType::MinInclusive(_)
+                    | FacetType::MaxInclusive(_)
+            )
+        }) {
+            ", PartialOrd"
+        } else {
+            ""
+        };
+
+        // HACK(drosen): Just to get validation working
+        let extra = if entity.type_name == "xs:decimal" { ", PartialOrd" } else { extra };
+
+        format!("#[derive(Default, PartialEq, Debug, UtilsTupleIo, UtilsDefaultSerde{extra})]\n")
+            .into()
     }
 
     fn format_comment(&self, entity: &TupleStruct, gen: &Generator) -> String {

@@ -11,12 +11,70 @@ pub trait EnumGenerator {
         let default_case = format!(
             "impl Default for {name} {{\n\
             {indent}fn default() -> {name} {{\n\
-            {indent}{indent}Self::__Unknown__(\"No valid variants\".into())\n\
+            {indent}{indent}Self::__Unknown__(Default::default())\n\
             {indent}}}\n\
             }}",
             name = name,
             indent = gen.base().indent()
         );
+
+        let mut display_contents = String::new();
+        let mut parse_contents = String::new();
+        let mut easy_display = true;
+        for case in &entity.cases {
+            if case.type_name.is_some() {
+                easy_display = false;
+                break;
+            }
+
+            display_contents.push_str(&format!(
+                "{indent}{indent}{indent}Self::{} => \"{}\".to_string(),\n",
+                gen.enum_case_gen().get_name(case, gen),
+                case.name,
+                indent = gen.base().indent()
+            ));
+            parse_contents.push_str(&format!(
+                "{indent}{indent}{indent}\"{}\" => Self::{},\n",
+                case.name,
+                gen.enum_case_gen().get_name(case, gen),
+                indent = gen.base().indent()
+            ));
+        }
+
+        // For now we will only generate for unit enums
+        let display_enum = if easy_display {
+            format!(
+                r#"impl std::fmt::Display for {name} {{
+{indent}fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {{
+{indent}{indent}write!(f, "{{}}", match &self {{
+{display_contents}
+{indent}{indent}{indent}Self::__Unknown__(val) => ::std::format!("__Unknown__({{val}})"),
+{indent}{indent}}})
+{indent}}}
+}}"#,
+                indent = gen.base().indent()
+            )
+        } else {
+            "".into()
+        };
+        let parse_enum = if easy_display {
+            format!(
+                r#"impl std::str::FromStr for {name} {{
+type Err = std::convert::Infallible;
+{indent}fn from_str(s: &str) -> Result<Self, Self::Err> {{
+{indent}{indent}let output = match s {{
+{parse_contents}
+{indent}{indent}{indent}val => Self::__Unknown__(<{typename} as std::str::FromStr>::from_str(val)?),
+{indent}{indent}}};
+{indent}{indent}Ok(output)
+{indent}}}
+}}"#,
+                indent = gen.base().indent(),
+                typename = self.get_type_name(entity, gen)
+            )
+        } else {
+            "".into()
+        };
 
         format!(
             "{comment}{macros}\n\
@@ -25,6 +83,8 @@ pub trait EnumGenerator {
                 {indent}__Unknown__({typename}),\n\
             }}\n\n\
             {default}\n\n\
+            {display_enum}\n\n\
+            {parse_enum}\n\n\
             {validation}\n\n\
             {subtypes}\n\n",
             indent = gen.base().indent(),
