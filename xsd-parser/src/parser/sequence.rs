@@ -47,7 +47,10 @@ fn elements_to_fields(sequence: &Node, parent_name: &str) -> Vec<StructField> {
             RsEntity::Enum(mut en) => {
                 en.name = format!("{}Choice{}", parent_name, choice_count);
                 choice_count += 1;
-                enum_to_field(en)
+                let mut en = enum_to_field(en);
+                en.type_modifiers.push(TypeModifier::Flatten);
+
+                en
             }
             RsEntity::Alias(alias) => StructField {
                 name: alias.name,

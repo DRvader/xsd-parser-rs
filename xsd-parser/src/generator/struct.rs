@@ -2,19 +2,123 @@ use std::borrow::Cow;
 
 use crate::{
     generator::{validator::gen_validate_impl, Generator},
-    parser::types::Struct,
+    parser::types::{Struct, StructFieldSource},
 };
 
 pub trait StructGenerator {
     fn generate(&self, entity: &Struct, gen: &Generator) -> String {
         format!(
-            "{comment}{macros}pub struct {name} {{{fields}}}\n\n{validation}\n{subtypes}\n",
+            "{comment}{macros}pub struct {name} {{{fields}}}\n\n{validation}\n{subtypes}\n{deserialize}\n",
             comment = self.format_comment(entity, gen),
             macros = self.macros(entity, gen),
             name = self.get_type_name(entity, gen),
             fields = self.fields(entity, gen),
             subtypes = self.subtypes(entity, gen),
             validation = self.validation(entity, gen),
+            deserialize = self.deserialize(entity, gen),
+        )
+    }
+
+    fn deserialize(&self, entity: &Struct, gen: &Generator) -> String {
+        let mut fields = String::new();
+        for field in entity.fields.borrow().iter() {
+            let mut flatten = false;
+
+            let attribute = matches!(field.source, StructFieldSource::Attribute);
+
+            let mut field_getter = String::new();
+
+            for modifier in &field.type_modifiers {
+                let ty = if field_getter.is_empty() { "popper" } else { "inter" };
+
+                let pop_func = match modifier {
+                    crate::parser::types::TypeModifier::None => None,
+                    crate::parser::types::TypeModifier::Array => {
+                        Some(if attribute { "pop_attributes" } else { "pop_children" })
+                    }
+                    crate::parser::types::TypeModifier::Option => {
+                        Some(if attribute { "maybe_pop_attribute" } else { "maybe_pop_child" })
+                    }
+                    crate::parser::types::TypeModifier::Recursive => {
+                        Some(if attribute { "pop_boxed_attribute" } else { "pop_boxed_child" })
+                    }
+                    crate::parser::types::TypeModifier::Empty => None,
+                    crate::parser::types::TypeModifier::Flatten => {
+                        flatten = true;
+                        None
+                    }
+                };
+
+                if let Some(pop_func) = pop_func {
+                    field_getter
+                        .push_str(&format!("let inter = {ty}.{pop_func}(\"{}\");\n", field.name));
+                }
+            }
+
+            if field_getter.is_empty() {
+                if attribute {
+                    field_getter =
+                        format!("let inter = popper.pop_attribute(\"{}\");\n", field.name);
+                } else {
+                    field_getter = format!("let inter = popper.pop_child(\"{}\");\n", field.name);
+                }
+            }
+
+            let field_gen = if flatten {
+                // Complex case...
+                // we need to clone the popper, and if the nested call is successful replace our main popper
+                // if unsuccessful we will just return without changing our primary popper.
+                format!(
+                    r#"
+                    let inter = inter.clone();
+                    let result = |popper| {{
+                        {field_getter}
+                    }};
+
+                    let field = match (result)(popper) {{
+                        Ok(result) => {{
+                            result
+                        }}
+                        Err(err) => {{
+                            return Err(err);
+                        }}
+                    }};
+                    *popper = inter;
+                "#
+                )
+            } else {
+                format!("{field_getter}\nlet field = inter;")
+            };
+
+            fields.push_str(&format!(
+                r#"
+                {}: {{
+                    {field_gen}
+
+                    field
+                }},
+            "#,
+                field.name
+            ));
+        }
+
+        format!(
+            r#"
+            impl XmlDeserialize for {} {{
+            fn xml_deserialize(outer_popper: &mut XmlPopper) -> Self {{
+                let popper = outer_popper.clone();
+
+                let output = Self {{
+                    {fields}
+                }};
+
+                *outer_popper = popper;
+
+                Ok(output)
+        }}
+    }}
+        "#,
+            entity.name
         )
     }
 
@@ -83,7 +187,7 @@ pub trait StructGenerator {
     }
 
     fn macros(&self, _entity: &Struct, gen: &Generator) -> Cow<'static, str> {
-        let derives = "#[derive(Default, PartialEq, Debug, YaSerialize, YaDeserialize)]\n";
+        let derives = "#[derive(Default, PartialEq, Debug)]\n";
         let tns = gen.target_ns.borrow();
         match tns.as_ref() {
             Some(tn) => match tn.name() {

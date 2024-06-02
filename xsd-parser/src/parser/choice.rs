@@ -6,7 +6,7 @@ use crate::parser::{
     xsd_elements::{ElementType, XsdNode},
 };
 
-use super::types::EnumCase;
+use super::types::{EnumCase, TypeModifier};
 
 pub fn parse_choice(choice: &Node) -> RsEntity {
     let mut sub_type_count = 0;
@@ -30,9 +30,10 @@ pub fn parse_choice(choice: &Node) -> RsEntity {
 
                 EnumCase {
                     name: st.name.clone(),
-                    type_name: Some(st.name.to_string()),
+                    type_name: None,
                     source: EnumSource::Choice,
                     subtypes: vec![RsEntity::Struct(st)],
+                    type_modifiers: vec![TypeModifier::Flatten],
                     ..Default::default()
                 }
             }

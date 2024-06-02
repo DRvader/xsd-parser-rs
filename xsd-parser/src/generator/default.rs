@@ -101,7 +101,9 @@ pub fn yaserde_for_element(
                 indent, p, field_name
             )
         }
-        None => format!("{}#[yaserde(rename = \"{}\"{extra})]\n", indent, field_name),
+        None => {
+            format!("{}#[yaserde(rename = \"{}\"{extra})]\n", indent, field_name)
+        }
     }
 }
 

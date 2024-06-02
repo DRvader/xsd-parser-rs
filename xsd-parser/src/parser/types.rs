@@ -264,6 +264,7 @@ pub enum TypeModifier {
     Option,
     Recursive,
     Empty,
+    Flatten,
 }
 
 #[derive(Debug, Clone, Default)]

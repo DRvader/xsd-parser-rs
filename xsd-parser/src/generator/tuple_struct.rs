@@ -11,13 +11,27 @@ use crate::{
 pub trait TupleStructGenerator {
     fn generate(&self, entity: &TupleStruct, gen: &Generator) -> String {
         format!(
-            "{comment}{macros}pub struct {name} (pub {typename});\n{subtypes}\n{validation}\n",
+            "{comment}{macros}pub struct {name} (pub {typename});\n{subtypes}\n{validation}\n{deserialize}\n",
             comment = self.format_comment(entity, gen),
             name = self.get_name(entity, gen),
             macros = self.macros(entity, gen),
             typename = self.get_type_name(entity, gen),
             subtypes = self.subtypes(entity, gen),
             validation = self.validation(entity, gen),
+            deserialize = self.deserialize(entity, gen)
+        )
+    }
+
+    fn deserialize(&self, entity: &TupleStruct, gen: &Generator) -> String {
+        format!(
+            r#"impl XmlDeserialize for {} {{
+              fn xml_deserialize(popper: &mut XmlPopper) -> Self {{
+            {}(popper.pop_child("{}"))
+        }}
+    }}"#,
+            self.get_name(entity, gen),
+            entity.name,
+            entity.name
         )
     }
 
@@ -56,8 +70,7 @@ pub trait TupleStructGenerator {
         // HACK(drosen): Just to get validation working
         let extra = if entity.type_name == "xs:decimal" { ", PartialOrd" } else { extra };
 
-        format!("#[derive(Default, PartialEq, Debug, UtilsTupleIo, UtilsDefaultSerde{extra})]\n")
-            .into()
+        format!("#[derive(Default, PartialEq, Debug)]\n").into()
     }
 
     fn format_comment(&self, entity: &TupleStruct, gen: &Generator) -> String {

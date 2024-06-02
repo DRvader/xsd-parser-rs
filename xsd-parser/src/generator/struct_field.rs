@@ -45,24 +45,28 @@ pub trait StructFieldGenerator {
 
     fn macros(&self, entity: &StructField, gen: &Generator, extra: &str) -> String {
         let indent = gen.base().indent();
-        match entity.source {
-            StructFieldSource::Choice | StructFieldSource::Sequence => {
-                yaserde_for_flatten_element(indent.as_str(), extra)
-            }
-            StructFieldSource::Attribute => {
-                yaserde_for_attribute(entity.name.as_str(), indent.as_str(), extra)
-            }
-            StructFieldSource::Element => yaserde_for_element(
-                entity.name.as_str(),
-                gen.target_ns.borrow().as_ref(),
-                indent.as_str(),
-                extra,
-            ),
-            _ => {
-                if extra.len() > 0 {
-                    format!("{indent}#[yaserde({extra})]", indent = gen.base().indent())
-                } else {
-                    "".into()
+        if entity.type_modifiers.contains(&TypeModifier::Flatten) {
+            yaserde_for_flatten_element(indent.as_str(), extra)
+        } else {
+            match entity.source {
+                StructFieldSource::Choice | StructFieldSource::Sequence => {
+                    yaserde_for_flatten_element(indent.as_str(), extra)
+                }
+                StructFieldSource::Attribute => {
+                    yaserde_for_attribute(entity.name.as_str(), indent.as_str(), extra)
+                }
+                StructFieldSource::Element => yaserde_for_element(
+                    entity.name.as_str(),
+                    gen.target_ns.borrow().as_ref(),
+                    indent.as_str(),
+                    extra,
+                ),
+                _ => {
+                    if extra.len() > 0 {
+                        format!("{indent}#[yaserde({extra})]", indent = gen.base().indent())
+                    } else {
+                        "".into()
+                    }
                 }
             }
         }

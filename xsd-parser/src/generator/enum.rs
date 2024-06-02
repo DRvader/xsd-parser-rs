@@ -86,7 +86,8 @@ type Err = std::convert::Infallible;
             {display_enum}\n\n\
             {parse_enum}\n\n\
             {validation}\n\n\
-            {subtypes}\n\n",
+            {subtypes}\n\n\
+            {deserialize}\n\n",
             indent = gen.base().indent(),
             comment = self.format_comment(entity, gen),
             macros = self.macros(entity, gen),
@@ -96,6 +97,107 @@ type Err = std::convert::Infallible;
             default = default_case,
             subtypes = self.subtypes(entity, gen),
             validation = self.validation(entity, gen),
+            deserialize = self.deserialize(entity, gen)
+        )
+    }
+
+    fn deserialize(&self, entity: &Enum, gen: &Generator) -> String {
+        let mut cases = String::new();
+        let mut case_gens = String::new();
+        for (index, case) in entity.cases.iter().enumerate() {
+            let mut case_getter = String::new();
+
+            for modifier in &case.type_modifiers {
+                let ty = if case_getter.is_empty() { "popper" } else { "inter" };
+
+                let pop_func = match modifier {
+                    crate::parser::types::TypeModifier::None => None,
+                    crate::parser::types::TypeModifier::Array => Some("pop_children"),
+                    crate::parser::types::TypeModifier::Option => Some("maybe_pop_child"),
+                    crate::parser::types::TypeModifier::Recursive => Some("pop_child"),
+                    crate::parser::types::TypeModifier::Empty => None,
+                    crate::parser::types::TypeModifier::Flatten => None,
+                };
+
+                if let Some(pop_func) = pop_func {
+                    case_getter
+                        .push_str(&format!("let inter = {ty}.{pop_func}(\"{}\");\n", case.name));
+                }
+            }
+
+            if case_getter.is_empty() {
+                case_getter = format!("let inter = popper.pop_child(\"{}\");\n", case.name);
+            }
+
+            let case_gather = format!(
+                r#"
+                    {{
+                        let inter = inter.clone();
+                        let result = |popper| {{
+                            {case_getter}
+                        }};
+
+                        let field = match (result)(popper) {{
+                            Ok(result) => {{
+                                core::option::Option::Some(result)
+                            }}
+                            Err(err) => {{
+                                core::option::Option::None
+                            }}
+                        }};
+
+                        *popper = inter;
+
+                        field
+                    }},
+                "#
+            );
+
+            cases.push_str(&case_gather);
+
+            let mut case_gen = String::new();
+            case_gen.push('(');
+            for i in 0..entity.cases.len() {
+                if i == index {
+                    case_gen.push_str("core::option::Option::None, ");
+                } else {
+                    case_gen.push_str("core::option::Option::Some(case), ");
+                }
+            }
+            case_gen.push_str(") => {\n");
+
+            case_gen.push_str("\n");
+
+            case_gen.push_str(&format!("Self::{}(case)", case.value));
+
+            case_gen.push_str("\n");
+
+            case_gen.push_str("}\n");
+        }
+
+        case_gens.push_str(
+            r#"_ => {
+            return Err("Found multiple possible matches");
+        }"#,
+        );
+
+        format!(
+            r#"
+            impl XmlDeserialize for {} {{
+            fn xml_deserialize(outer_popper: &mut XmlPopper) -> Self {{
+                let popper = outer_popper.clone();
+
+                let results = ({cases});
+
+                let output = match results {{
+                    {case_gens}
+                }};
+
+                *outer_popper = popper;
+
+                Ok(output)
+        }}}}"#,
+            entity.name
         )
     }
 
@@ -171,10 +273,10 @@ type Err = std::convert::Infallible;
 
     fn macros(&self, entity: &Enum, gen: &Generator) -> Cow<'static, str> {
         if entity.source == EnumSource::Union {
-            return "#[derive(PartialEq, Debug, UtilsUnionSerDe)]".into();
+            return "#[derive(PartialEq, Debug)]".into();
         }
 
-        let derives = "#[derive(PartialEq, Debug, YaSerialize, YaDeserialize)]";
+        let derives = "#[derive(PartialEq, Debug)]";
         let tns = gen.target_ns.borrow();
         match tns.as_ref() {
             Some(tn) => match tn.name() {
