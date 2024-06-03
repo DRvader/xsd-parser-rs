@@ -24,14 +24,13 @@ pub trait TupleStructGenerator {
 
     fn deserialize(&self, entity: &TupleStruct, gen: &Generator) -> String {
         format!(
-            r#"impl XmlDeserialize for {} {{
+            r#"impl XmlDeserialize for {typename} {{
               fn xml_deserialize(popper: &mut XmlPopper) -> Self {{
-            {}(popper.pop_child("{}"))
+            {typename}(popper.pop_child("{name}"))
         }}
     }}"#,
-            self.get_name(entity, gen),
-            entity.name,
-            entity.name
+            typename = self.get_name(entity, gen),
+            name = entity.name
         )
     }
 

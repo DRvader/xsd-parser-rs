@@ -21,22 +21,35 @@ pub trait EnumGenerator {
         let mut display_contents = String::new();
         let mut parse_contents = String::new();
         let mut easy_display = true;
+
+        let mod_name = self.mod_name(entity, gen);
         for case in &entity.cases {
+            let mut case = case.clone();
+
             if case.type_name.is_some() {
                 easy_display = false;
                 break;
             }
 
+            if let Some(tn) = &mut case.type_name {
+                if !case.subtypes.is_empty() {
+                    *tn = format!("{}::{}", mod_name, gen.base().format_type_name(tn.as_str(), gen))
+                }
+            }
+
+            // let type_name = gen.enum_case_gen().get_type_name(&case, gen);
+            let name = gen.enum_case_gen().get_name(&case, gen);
+
             display_contents.push_str(&format!(
                 "{indent}{indent}{indent}Self::{} => \"{}\".to_string(),\n",
-                gen.enum_case_gen().get_name(case, gen),
+                name,
                 case.name,
                 indent = gen.base().indent()
             ));
             parse_contents.push_str(&format!(
                 "{indent}{indent}{indent}\"{}\" => Self::{},\n",
                 case.name,
-                gen.enum_case_gen().get_name(case, gen),
+                name,
                 indent = gen.base().indent()
             ));
         }
@@ -105,74 +118,30 @@ type Err = std::convert::Infallible;
         let mut cases = String::new();
         let mut case_gens = String::new();
         for (index, case) in entity.cases.iter().enumerate() {
-            let mut case_getter = String::new();
+            let (case_de, case_assign) = gen.enum_case_gen().deserialize(case, gen);
 
-            for modifier in &case.type_modifiers {
-                let ty = if case_getter.is_empty() { "popper" } else { "inter" };
-
-                let pop_func = match modifier {
-                    crate::parser::types::TypeModifier::None => None,
-                    crate::parser::types::TypeModifier::Array => Some("pop_children"),
-                    crate::parser::types::TypeModifier::Option => Some("maybe_pop_child"),
-                    crate::parser::types::TypeModifier::Recursive => Some("pop_child"),
-                    crate::parser::types::TypeModifier::Empty => None,
-                    crate::parser::types::TypeModifier::Flatten => None,
-                };
-
-                if let Some(pop_func) = pop_func {
-                    case_getter
-                        .push_str(&format!("let inter = {ty}.{pop_func}(\"{}\");\n", case.name));
-                }
-            }
-
-            if case_getter.is_empty() {
-                case_getter = format!("let inter = popper.pop_child(\"{}\");\n", case.name);
-            }
-
-            let case_gather = format!(
-                r#"
-                    {{
-                        let inter = inter.clone();
-                        let result = |popper| {{
-                            {case_getter}
-                        }};
-
-                        let field = match (result)(popper) {{
-                            Ok(result) => {{
-                                core::option::Option::Some(result)
-                            }}
-                            Err(err) => {{
-                                core::option::Option::None
-                            }}
-                        }};
-
-                        *popper = inter;
-
-                        field
-                    }},
-                "#
-            );
-
-            cases.push_str(&case_gather);
+            cases.push_str(&case_de);
 
             let mut case_gen = String::new();
             case_gen.push('(');
             for i in 0..entity.cases.len() {
                 if i == index {
-                    case_gen.push_str("core::option::Option::None, ");
+                    case_gen.push_str("core::option::Option::Some(value), ");
                 } else {
-                    case_gen.push_str("core::option::Option::Some(case), ");
+                    case_gen.push_str("core::option::Option::None, ");
                 }
             }
             case_gen.push_str(") => {\n");
 
             case_gen.push_str("\n");
 
-            case_gen.push_str(&format!("Self::{}(case)", case.value));
+            case_gen.push_str(&case_assign);
 
             case_gen.push_str("\n");
 
             case_gen.push_str("}\n");
+
+            case_gens.push_str(&case_gen);
         }
 
         case_gens.push_str(
@@ -197,7 +166,7 @@ type Err = std::convert::Infallible;
 
                 Ok(output)
         }}}}"#,
-            entity.name
+            self.get_name(entity, gen)
         )
     }
 
@@ -277,24 +246,25 @@ type Err = std::convert::Infallible;
         }
 
         let derives = "#[derive(PartialEq, Debug)]";
-        let tns = gen.target_ns.borrow();
-        match tns.as_ref() {
-            Some(tn) => match tn.name() {
-                Some(name) => format!(
-                    "{derives}\n#[yaserde(prefix = \"{prefix}\", namespace = \"{prefix}: {uri}\")]",
-                    derives = derives,
-                    prefix = name,
-                    uri = tn.uri()
-                ),
-                None => format!(
-                    "{derives}\n#[yaserde(namespace = \"{uri}\")]",
-                    derives = derives,
-                    uri = tn.uri()
-                ),
-            },
-            None => format!("{derives}", derives = derives),
-        }
-        .into()
+        // let tns = gen.target_ns.borrow();
+        // match tns.as_ref() {
+        //     Some(tn) => match tn.name() {
+        //         Some(name) => format!(
+        //             "{derives}\n#[yaserde(prefix = \"{prefix}\", namespace = \"{prefix}: {uri}\")]",
+        //             derives = derives,
+        //             prefix = name,
+        //             uri = tn.uri()
+        //         ),
+        //         None => format!(
+        //             "{derives}\n#[yaserde(namespace = \"{uri}\")]",
+        //             derives = derives,
+        //             uri = tn.uri()
+        //         ),
+        //     },
+        //     None => format!("{derives}", derives = derives),
+        // }
+        // .into()
+        derives.into()
     }
 
     fn format_comment(&self, entity: &Enum, gen: &Generator) -> String {

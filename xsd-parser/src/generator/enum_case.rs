@@ -9,10 +9,10 @@ pub trait EnumCaseGenerator {
             let mut output = format!("({})", self.get_type_name(entity, gen));
             if let Some(name) = &entity.type_name {
                 // This would be incorrectly treated as std::string::String
-                if name == "string" {
-                    output =
-                        format!("(#[yaserde(force_struct)] {})", self.get_type_name(entity, gen));
-                }
+                // if name == "string" {
+                //     output =
+                //         format!("(#[yaserde(force_struct)] {})", self.get_type_name(entity, gen));
+                // }
             }
 
             output
@@ -33,7 +33,7 @@ pub trait EnumCaseGenerator {
         default_format_type(entity.name.as_str(), &gen.target_ns.borrow())
             .split("::")
             .last()
-            .unwrap()
+            .expect(&format!("Couldn't format {}", entity.name))
             .to_string()
     }
 
@@ -51,6 +51,7 @@ pub trait EnumCaseGenerator {
             return "".into();
         }
 
+        /*
         let (prefix, field_name) = split_name(entity.name.as_str());
         match prefix {
             Some(p) => format!(
@@ -75,6 +76,93 @@ pub trait EnumCaseGenerator {
                 }
             }
         }
+        */
+
+        String::new()
+    }
+
+    fn deserialize(&self, case: &EnumCase, gen: &Generator) -> (String, String) {
+        let case_getter = if case.source == EnumSource::Union || case.type_name.is_none() {
+            // special case: we are just parsing the value
+
+            format!(
+                r#"
+                let value = popper.pop_value();
+                if value == "{}" {{
+                    core::option::Option::Some(value)
+                }} else {{
+                    core::option::Option::None
+                }}
+                "#,
+                case.name
+            )
+        } else {
+            let mut case_getter = String::new();
+
+            let mut flatten = false;
+            for modifier in &case.type_modifiers {
+                let ty = if case_getter.is_empty() { "popper" } else { "inter" };
+
+                let pop_func = match modifier {
+                    crate::parser::types::TypeModifier::None => None,
+                    crate::parser::types::TypeModifier::Array => Some("pop_children"),
+                    crate::parser::types::TypeModifier::Option => Some("maybe_pop_child"),
+                    crate::parser::types::TypeModifier::Recursive => Some("pop_child"),
+                    crate::parser::types::TypeModifier::Empty => None,
+                    crate::parser::types::TypeModifier::Flatten => {
+                        flatten = true;
+                        None
+                    }
+                };
+
+                if let Some(pop_func) = pop_func {
+                    case_getter
+                        .push_str(&format!("let inter = {ty}.{pop_func}(\"{}\");\n", case.name));
+                }
+            }
+
+            if flatten {
+                case_getter = format!("{}::xml_deserialize(popper)", self.get_type_name(case, gen));
+            } else if case_getter.is_empty() {
+                case_getter = format!("let inter = popper.pop_child(\"{}\");\ninter\n", case.name);
+            }
+
+            case_getter
+        };
+
+        let assign = if let Some(_tn) = &case.type_name {
+            format!("Self::{}(value)", self.get_name(case, gen))
+        } else {
+            // No typename means we can ignore the result
+            format!("Self::{}", self.get_name(case, gen))
+        };
+
+        (
+            format!(
+                r#"
+                    {{
+                        let inter = popper.clone();
+                        let result = |popper| {{
+                            {case_getter}
+                        }};
+
+                        let field = match (result)(popper) {{
+                            Ok(result) => {{
+                                core::option::Option::Some(result)
+                            }}
+                            Err(err) => {{
+                                core::option::Option::None
+                            }}
+                        }};
+
+                        *popper = inter;
+
+                        field
+                    }},
+                "#
+            ),
+            assign,
+        )
     }
 }
 

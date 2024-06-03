@@ -16,6 +16,7 @@ pub trait StructFieldGenerator {
         if entity.type_name == "string" {
             extra_macro = ", force_struct";
         }
+
         format!(
             "{comment}{macros}{indent}pub {name}: {typename},",
             comment = self.format_comment(entity, gen),
@@ -44,6 +45,7 @@ pub trait StructFieldGenerator {
     }
 
     fn macros(&self, entity: &StructField, gen: &Generator, extra: &str) -> String {
+        /*
         let indent = gen.base().indent();
         if entity.type_modifiers.contains(&TypeModifier::Flatten) {
             yaserde_for_flatten_element(indent.as_str(), extra)
@@ -69,6 +71,78 @@ pub trait StructFieldGenerator {
                     }
                 }
             }
+        }
+        */
+        String::new()
+    }
+
+    fn deserialize(&self, field: &StructField, gen: &Generator) -> String {
+        let mut flatten =
+            matches!(field.source, StructFieldSource::Choice | StructFieldSource::Sequence);
+
+        let attribute = matches!(field.source, StructFieldSource::Attribute);
+
+        let mut field_getter = String::new();
+        for modifier in &field.type_modifiers {
+            let ty = if field_getter.is_empty() { "popper" } else { "inter" };
+
+            let pop_func = match modifier {
+                crate::parser::types::TypeModifier::None => None,
+                crate::parser::types::TypeModifier::Array => {
+                    Some(if attribute { "pop_attributes" } else { "pop_children" })
+                }
+                crate::parser::types::TypeModifier::Option => {
+                    Some(if attribute { "maybe_pop_attribute" } else { "maybe_pop_child" })
+                }
+                crate::parser::types::TypeModifier::Recursive => {
+                    Some(if attribute { "pop_boxed_attribute" } else { "pop_boxed_child" })
+                }
+                crate::parser::types::TypeModifier::Empty => None,
+                crate::parser::types::TypeModifier::Flatten => {
+                    flatten = true;
+                    None
+                }
+            };
+
+            if let Some(pop_func) = pop_func {
+                field_getter
+                    .push_str(&format!("let inter = {ty}.{pop_func}(\"{}\");\n", field.name));
+            }
+        }
+
+        if field_getter.is_empty() {
+            if attribute {
+                field_getter = format!("let inter = popper.pop_attribute(\"{}\");\n", field.name);
+            } else {
+                field_getter = format!("let inter = popper.pop_child(\"{}\");\n", field.name);
+            }
+        }
+
+        if flatten {
+            // Complex case...
+            // we need to clone the popper, and if the nested call is successful replace our main popper
+            // if unsuccessful we will just return without changing our primary popper.
+            format!(
+                r#"
+                    let inter = popper.clone();
+                    let result = |popper| {{
+                            <{} as XmlDeserialize>::xml_deserialize(popper)
+                    }};
+
+                    let field = match (result)(popper) {{
+                        Ok(result) => {{
+                            result
+                        }}
+                        Err(err) => {{
+                            return Err(err);
+                        }}
+                    }};
+                    *popper = inter;
+                "#,
+                self.get_type_name(field, gen)
+            )
+        } else {
+            format!("{field_getter}\nlet field = inter;")
         }
     }
 }

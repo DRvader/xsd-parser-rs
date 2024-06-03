@@ -10,6 +10,8 @@ use crate::parser::{
     xsd_elements::{ElementType, XsdNode},
 };
 
+use super::types::TypeModifier;
+
 pub fn parse_union(union: &Node) -> RsEntity {
     let mut cases =
         union.attribute(attribute::MEMBER_TYPES).map(create_enum_cases).unwrap_or_default();
@@ -26,6 +28,7 @@ pub fn parse_union(union: &Node) -> RsEntity {
                     type_name: Some(subtype.name().to_string()),
                     source: EnumSource::Union,
                     subtypes: vec![subtype],
+                    type_modifiers: vec![TypeModifier::Flatten],
                     ..Default::default()
                 }
             }),
