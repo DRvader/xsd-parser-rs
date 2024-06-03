@@ -8,7 +8,7 @@ use crate::{
 pub trait StructGenerator {
     fn generate(&self, entity: &Struct, gen: &Generator) -> String {
         format!(
-            "{comment}{macros}pub struct {name} {{{fields}}}\n\n{validation}\n{subtypes}\n{deserialize}\n",
+            "{comment}{macros}pub struct {name} {{{fields}}}\n\n{validation}\n{deserialize}\n{subtypes}\n",
             comment = self.format_comment(entity, gen),
             macros = self.macros(entity, gen),
             name = self.get_type_name(entity, gen),

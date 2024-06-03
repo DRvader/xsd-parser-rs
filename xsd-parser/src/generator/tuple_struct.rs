@@ -11,7 +11,7 @@ use crate::{
 pub trait TupleStructGenerator {
     fn generate(&self, entity: &TupleStruct, gen: &Generator) -> String {
         format!(
-            "{comment}{macros}pub struct {name} (pub {typename});\n{subtypes}\n{validation}\n{deserialize}\n",
+            "{comment}{macros}pub struct {name} (pub {typename});\n{validation}\n{deserialize}\n{subtypes}\n",
             comment = self.format_comment(entity, gen),
             name = self.get_name(entity, gen),
             macros = self.macros(entity, gen),

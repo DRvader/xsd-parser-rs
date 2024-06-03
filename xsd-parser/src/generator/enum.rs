@@ -99,8 +99,8 @@ type Err = std::convert::Infallible;
             {display_enum}\n\n\
             {parse_enum}\n\n\
             {validation}\n\n\
-            {subtypes}\n\n\
-            {deserialize}\n\n",
+            {deserialize}\n\n\
+            {subtypes}\n\n",
             indent = gen.base().indent(),
             comment = self.format_comment(entity, gen),
             macros = self.macros(entity, gen),
