@@ -70,7 +70,7 @@ pub trait EnumGenerator {
         } else {
             "".into()
         };
-        let parse_enum = if easy_display {
+        let parse_enum = if easy_display && false {
             format!(
                 r#"impl std::str::FromStr for {name} {{
 type Err = std::convert::Infallible;
@@ -146,15 +146,15 @@ type Err = std::convert::Infallible;
 
         case_gens.push_str(
             r#"_ => {
-            return Err("Found multiple possible matches");
+            return Err(DeError::User("Found multiple possible matches".to_string()));
         }"#,
         );
 
         format!(
             r#"
             impl XmlDeserialize for {} {{
-            fn xml_deserialize(outer_popper: &mut XmlPopper) -> Self {{
-                let popper = outer_popper.clone();
+            fn xml_deserialize(outer_popper: &mut XmlPopper) -> Result<Self, DeError> {{
+                let mut popper = outer_popper.clone();
 
                 let results = ({cases});
 

@@ -87,7 +87,7 @@ pub trait EnumCaseGenerator {
 
             format!(
                 r#"
-                let value = popper.pop_value();
+                let value = popper.pop_value()?;
                 if value == "{}" {{
                     core::option::Option::Some(value)
                 }} else {{
@@ -117,14 +117,14 @@ pub trait EnumCaseGenerator {
 
                 if let Some(pop_func) = pop_func {
                     case_getter
-                        .push_str(&format!("let inter = {ty}.{pop_func}(\"{}\");\n", case.name));
+                        .push_str(&format!("let inter = {ty}.{pop_func}(\"{}\")?;\n", case.name));
                 }
             }
 
             if flatten {
                 case_getter = format!("{}::xml_deserialize(popper)", self.get_type_name(case, gen));
             } else if case_getter.is_empty() {
-                case_getter = format!("let inter = popper.pop_child(\"{}\");\ninter\n", case.name);
+                case_getter = format!("let inter = popper.pop_child(\"{}\")?;\nOk::<_, DeError>(inter)\n", case.name);
             }
 
             case_getter
@@ -141,12 +141,12 @@ pub trait EnumCaseGenerator {
             format!(
                 r#"
                     {{
-                        let inter = popper.clone();
-                        let result = |popper| {{
+                        let mut inter = popper.clone();
+                        let result = |popper: &mut XmlPopper| {{
                             {case_getter}
                         }};
 
-                        let field = match (result)(popper) {{
+                        let field = match (result)(&mut inter) {{
                             Ok(result) => {{
                                 core::option::Option::Some(result)
                             }}
@@ -155,7 +155,7 @@ pub trait EnumCaseGenerator {
                             }}
                         }};
 
-                        *popper = inter;
+                        popper = inter;
 
                         field
                     }},

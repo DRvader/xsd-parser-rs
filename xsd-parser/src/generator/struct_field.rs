@@ -106,15 +106,15 @@ pub trait StructFieldGenerator {
 
             if let Some(pop_func) = pop_func {
                 field_getter
-                    .push_str(&format!("let inter = {ty}.{pop_func}(\"{}\");\n", field.name));
+                    .push_str(&format!("let inter = {ty}.{pop_func}(\"{}\")?;\n", field.name));
             }
         }
 
         if field_getter.is_empty() {
             if attribute {
-                field_getter = format!("let inter = popper.pop_attribute(\"{}\");\n", field.name);
+                field_getter = format!("let inter = popper.pop_attribute(\"{}\")?;\n", field.name);
             } else {
-                field_getter = format!("let inter = popper.pop_child(\"{}\");\n", field.name);
+                field_getter = format!("let inter = popper.pop_child(\"{}\")?;\n", field.name);
             }
         }
 
@@ -124,12 +124,12 @@ pub trait StructFieldGenerator {
             // if unsuccessful we will just return without changing our primary popper.
             format!(
                 r#"
-                    let inter = popper.clone();
-                    let result = |popper| {{
+                    let mut inter = popper.clone();
+                    let result = |popper: &mut XmlPopper| {{
                             <{} as XmlDeserialize>::xml_deserialize(popper)
                     }};
 
-                    let field = match (result)(popper) {{
+                    let field = match (result)(&mut inter) {{
                         Ok(result) => {{
                             result
                         }}
@@ -137,7 +137,7 @@ pub trait StructFieldGenerator {
                             return Err(err);
                         }}
                     }};
-                    *popper = inter;
+                    popper = inter;
                 "#,
                 self.get_type_name(field, gen)
             )

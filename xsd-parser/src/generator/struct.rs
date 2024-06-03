@@ -32,8 +32,8 @@ pub trait StructGenerator {
         format!(
             r#"
             impl XmlDeserialize for {} {{
-            fn xml_deserialize(outer_popper: &mut XmlPopper) -> Self {{
-                let popper = outer_popper.clone();
+            fn xml_deserialize(outer_popper: &mut XmlPopper) -> Result<Self, DeError> {{
+                let mut popper = outer_popper.clone();
 
                 let output = Self {{
                     {fields}
