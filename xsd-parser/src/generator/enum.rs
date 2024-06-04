@@ -240,7 +240,7 @@ type Err = std::convert::Infallible;
         gen.base().format_type_name(entity.name.as_str(), gen).into()
     }
 
-    fn macros(&self, entity: &Enum, gen: &Generator) -> Cow<'static, str> {
+    fn macros(&self, entity: &Enum, _gen: &Generator) -> Cow<'static, str> {
         if entity.source == EnumSource::Union {
             return "#[derive(PartialEq, Debug)]".into();
         }

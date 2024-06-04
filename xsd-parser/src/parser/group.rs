@@ -2,10 +2,40 @@ use roxmltree::Node;
 
 use super::{
     node_parser::parse_node,
-    types::{Alias, RsEntity, Struct},
+    types::{Alias, RsEntity, Struct, TypeModifier},
     utils::get_documentation,
-    xsd_elements::{ElementType, XsdNode},
+    xsd_elements::{ElementType, XsdNode, MaxOccurs, min_occurs, max_occurs},
 };
+
+pub fn group_modifier(node: &Node) -> TypeModifier {
+    let min = min_occurs(node);
+    let max = max_occurs(node);
+    match min {
+        0 => match max {
+            MaxOccurs::None => TypeModifier::Option,
+            MaxOccurs::Unbounded => TypeModifier::Array,
+            MaxOccurs::Bounded(val) => {
+                if val > 1 {
+                    TypeModifier::Array
+                } else {
+                    TypeModifier::None
+                }
+            }
+        },
+        1 => match max {
+            MaxOccurs::None => TypeModifier::None,
+            MaxOccurs::Unbounded => TypeModifier::Array,
+            MaxOccurs::Bounded(val) => {
+                if val > 1 {
+                    TypeModifier::Array
+                } else {
+                    TypeModifier::None
+                }
+            }
+        },
+        _ => TypeModifier::Array,
+    }
+}
 
 pub fn parse_group(node: &Node, parent: &Node) -> RsEntity {
     if parent.xsd_type() == ElementType::Schema {
@@ -13,13 +43,24 @@ pub fn parse_group(node: &Node, parent: &Node) -> RsEntity {
     }
 
     let reference = node.attr_ref().expect("Non-global groups must be references.").to_string();
+    let modifier = group_modifier(node);
 
-    RsEntity::Alias(Alias {
-        name: reference.to_string(),
-        original: reference,
-        comment: get_documentation(node),
-        ..Default::default()
-    })
+    if modifier != TypeModifier::None {
+        RsEntity::Alias(Alias {
+            name: reference.to_string(),
+            original: reference,
+            comment: get_documentation(node),
+            type_modifiers: vec![modifier],
+            ..Default::default()
+        })
+    } else {
+        RsEntity::Alias(Alias {
+            name: reference.to_string(),
+            original: reference,
+            comment: get_documentation(node),
+            ..Default::default()
+        })
+    }
 }
 
 fn parse_global_group(node: &Node) -> RsEntity {

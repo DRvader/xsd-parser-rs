@@ -70,7 +70,17 @@ impl Struct {
                     v.extend_attribute_group(types)
                 }
 
-                types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+                if !f.type_modifiers.is_empty() {
+                    vec![StructField {
+                        name: f.name.clone(),
+                        type_name: types.get(&key).unwrap().name.clone(),
+                        comment: f.comment.clone(),
+                        type_modifiers: f.type_modifiers.clone(),
+                        ..Default::default()
+                   }]
+                } else {
+                    types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+                }
             })
             .filter(|f| {
                 //TODO: remove this workaround for fields names clash
@@ -91,7 +101,18 @@ impl Struct {
                     v.extend_attribute_group(types)
                 }
 
-                types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+
+                if !f.type_modifiers.is_empty() {
+                    vec![StructField {
+                        name: f.name.clone(),
+                        type_name: types.get(&key).unwrap().name.clone(),
+                        comment: f.comment.clone(),
+                        type_modifiers: f.type_modifiers.clone(),
+                        ..Default::default()
+                   }]
+                } else {
+                    types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+                }
             })
             .filter(|f| {
                 //TODO: remove this workaround for fields names clash
@@ -148,7 +169,17 @@ impl Struct {
                     v.extend_attribute_group(types)
                 }
 
-                types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+                if !f.type_modifiers.is_empty() {
+                    vec![StructField {
+                        name: f.name.clone(),
+                        type_name: types.get(&key).unwrap().name.clone(),
+                        comment: f.comment.clone(),
+                        type_modifiers: f.type_modifiers.clone(),
+                        ..Default::default()
+                   }]
+                } else {
+                    types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+                }
             })
             .filter(|f| {
                 //TODO: remove this workaround for fields names clash
@@ -171,7 +202,17 @@ impl Struct {
                     v.extend_attribute_group(types)
                 }
 
-                types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+                if !f.type_modifiers.is_empty() {
+                    vec![StructField {
+                        name: f.name.clone(),
+                        type_name: types.get(&key).unwrap().name.clone(),
+                        comment: f.comment.clone(),
+                        type_modifiers: f.type_modifiers.clone(),
+                        ..Default::default()
+                   }]
+                } else {
+                    types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
+                }
             })
             .filter(|f| {
                 //TODO: remove this workaround for fields names clash
@@ -284,6 +325,7 @@ pub struct Alias {
     pub original: String,
     pub comment: Option<String>,
     pub subtypes: Vec<RsEntity>,
+    pub type_modifiers: Vec<TypeModifier>
 }
 
 #[derive(Debug, Clone)]

@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use crate::{
     generator::{validator::gen_validate_impl, Generator},
-    parser::types::{Struct, StructField, StructFieldSource},
+    parser::types::Struct,
 };
 
 pub trait StructGenerator {
@@ -113,7 +113,7 @@ pub trait StructGenerator {
         gen.base().format_type_name(entity.name.as_str(), gen).into()
     }
 
-    fn macros(&self, _entity: &Struct, gen: &Generator) -> Cow<'static, str> {
+    fn macros(&self, _entity: &Struct, _gen: &Generator) -> Cow<'static, str> {
         let derives = "#[derive(Default, PartialEq, Debug)]\n";
         // let tns = gen.target_ns.borrow();
         // match tns.as_ref() {

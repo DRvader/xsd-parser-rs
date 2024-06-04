@@ -1,19 +1,19 @@
 use crate::{
-    generator::{default::default_format_type, utils::split_name, Generator},
+    generator::{default::default_format_type, Generator},
     parser::types::{EnumCase, EnumSource},
 };
 
 pub trait EnumCaseGenerator {
     fn generate(&self, entity: &EnumCase, gen: &Generator) -> String {
         let typename = if entity.type_name.is_some() {
-            let mut output = format!("({})", self.get_type_name(entity, gen));
-            if let Some(name) = &entity.type_name {
+            let output = format!("({})", self.get_type_name(entity, gen));
+            // if let Some(name) = &entity.type_name {
                 // This would be incorrectly treated as std::string::String
                 // if name == "string" {
                 //     output =
                 //         format!("(#[yaserde(force_struct)] {})", self.get_type_name(entity, gen));
                 // }
-            }
+           // }
 
             output
         } else {
@@ -46,7 +46,7 @@ pub trait EnumCaseGenerator {
         gen.base().format_comment(entity.comment.as_deref(), gen.base().indent_size())
     }
 
-    fn macros(&self, entity: &EnumCase, gen: &Generator, extra: &str) -> String {
+    fn macros(&self, entity: &EnumCase, _gen: &Generator, _extra: &str) -> String {
         if entity.source == EnumSource::Union {
             return "".into();
         }

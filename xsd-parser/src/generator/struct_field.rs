@@ -1,6 +1,5 @@
 use crate::{
     generator::{
-        default::{yaserde_for_attribute, yaserde_for_element, yaserde_for_flatten_element},
         Generator,
     },
     parser::types::{StructField, StructFieldSource, TypeModifier},
@@ -44,7 +43,7 @@ pub trait StructFieldGenerator {
         gen.base().format_comment(entity.comment.as_deref(), gen.base().indent_size())
     }
 
-    fn macros(&self, entity: &StructField, gen: &Generator, extra: &str) -> String {
+    fn macros(&self, _entity: &StructField, _gen: &Generator, _extra: &str) -> String {
         /*
         let indent = gen.base().indent();
         if entity.type_modifiers.contains(&TypeModifier::Flatten) {
@@ -95,7 +94,13 @@ pub trait StructFieldGenerator {
                     Some(if attribute { "maybe_pop_attribute" } else { "maybe_pop_child" })
                 }
                 crate::parser::types::TypeModifier::Recursive => {
-                    Some(if attribute { "pop_boxed_attribute" } else { "pop_boxed_child" })
+                    // if field.type_modifiers.contains(&crate::parser::types::TypeModifier::Option) ||
+                    //  field.type_modifiers.contains(&crate::parser::types::TypeModifier::Array) {
+                    //     None
+                    // } else {
+                    //     Some(if attribute { "pop_boxed_attribute" } else { "pop_boxed_child" })
+                    // }
+                    None
                 }
                 crate::parser::types::TypeModifier::Empty => None,
                 crate::parser::types::TypeModifier::Flatten => {

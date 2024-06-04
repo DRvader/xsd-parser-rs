@@ -16,18 +16,21 @@ use super::{
 
 pub fn parse_sequence(sequence: &Node, parent: &Node) -> RsEntity {
     let name = get_parent_name(sequence);
+
+    let parent_is_ref = parent.attr_ref().is_some();
+
     RsEntity::Struct(Struct {
         name: name.into(),
         comment: get_documentation(parent),
         subtypes: vec![],
-        fields: RefCell::new(elements_to_fields(sequence, name)),
+        fields: RefCell::new(elements_to_fields(sequence, name, parent_is_ref, parent)),
         attribute_groups: RefCell::new(attribute_groups_to_aliases(sequence)),
         groups: RefCell::new(groups_to_aliases(sequence)),
         ..Default::default()
     })
 }
 
-fn elements_to_fields(sequence: &Node, parent_name: &str) -> Vec<StructField> {
+fn elements_to_fields(sequence: &Node, parent_name: &str, _parent_is_ref: bool, _parent: &Node) -> Vec<StructField> {
     let mut choice_count = 0;
     sequence
         .children()
@@ -38,10 +41,15 @@ fn elements_to_fields(sequence: &Node, parent_name: &str) -> Vec<StructField> {
                 && n.xsd_type() != ElementType::AttributeGroup
         })
         .map(|n| match parse_node(&n, sequence) {
-            RsEntity::StructField(mut sf) => {
-                if sf.type_name.ends_with(parent_name) {
-                    sf.type_modifiers.push(TypeModifier::Recursive)
-                }
+            RsEntity::StructField(sf) => {
+                // if sf.type_name.ends_with(parent_name) && !parent_is_ref {
+                //     sf.type_modifiers.push(TypeModifier::Recursive);
+                //     if let Some(comment) = &mut sf.comment {
+                //         comment.push_str(&format!("{:?}", parent));
+                //     } else {
+                //         sf.comment = Some(parent_name.to_string());
+                //     }
+                // }
                 sf
             }
             RsEntity::Enum(mut en) => {
