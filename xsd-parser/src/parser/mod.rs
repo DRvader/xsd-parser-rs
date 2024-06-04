@@ -42,7 +42,7 @@ pub fn parse(text: &str) -> Result<RsFile, ()> {
     let schema =
         root.children().filter(|e| e.is_element()).last().expect("Schema element is required");
 
-    let schema_rs = parse_schema(&schema);
+    let mut schema_rs = parse_schema(&schema);
     for ty in &schema_rs.types {
         if let RsEntity::Struct(st) = ty {
             map.extend(st.get_types_map());
@@ -58,13 +58,18 @@ pub fn parse(text: &str) -> Result<RsFile, ()> {
             map.extend(st.get_types_map());
         }
     }
+
+    let mut extended_types = Vec::new();
     for ty in &schema_rs.types {
         if let RsEntity::Struct(st) = ty {
-            st.extend_base(&map);
+            extended_types.extend(st.extend_base(&map));
             st.extend_attribute_group(&map);
             st.extend_group(&map);
         }
     }
+
+    let extended_types = extended_types.into_iter().filter(|f| !schema_rs.types.iter().any(|field|if let RsEntity::Struct(st) = field{ st.name == f.name} else {false})).collect::<Vec<_>>();
+    schema_rs.types.extend(extended_types.into_iter().map(|v| RsEntity::Struct(v)));
 
     Ok(schema_rs)
 }

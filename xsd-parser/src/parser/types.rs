@@ -37,7 +37,9 @@ impl Struct {
         map
     }
 
-    pub fn extend_base(&self, types: &HashMap<&String, &Self>) {
+    pub fn extend_base(&self, types: &HashMap<&String, &Self>) -> Vec<Self> {
+        let mut extended_types = Vec::new();
+
         self.fields.borrow_mut().iter_mut().for_each(|f| f.extend_base(types));
 
         let mut fields = self
@@ -71,6 +73,7 @@ impl Struct {
                 }
 
                 if !f.type_modifiers.is_empty() {
+                    extended_types.push((*types.get(&key).unwrap()).clone());
                     vec![StructField {
                         name: f.name.clone(),
                         type_name: types.get(&key).unwrap().name.clone(),
@@ -103,6 +106,7 @@ impl Struct {
 
 
                 if !f.type_modifiers.is_empty() {
+                    extended_types.push((*types.get(&key).unwrap()).clone());
                     vec![StructField {
                         name: f.name.clone(),
                         type_name: types.get(&key).unwrap().name.clone(),
@@ -152,9 +156,11 @@ impl Struct {
 
         for subtype in &self.subtypes {
             if let RsEntity::Struct(s) = subtype {
-                s.extend_base(types);
+                extended_types.extend(s.extend_base(types));
             }
         }
+
+        extended_types
     }
 
     pub fn extend_attribute_group(&self, types: &HashMap<&String, &Self>) {
