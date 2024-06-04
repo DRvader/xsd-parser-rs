@@ -69,7 +69,7 @@ pub trait TupleStructGenerator {
         // HACK(drosen): Just to get validation working
         let extra = if entity.type_name == "xs:decimal" { ", PartialOrd" } else { extra };
 
-        format!("#[derive(Default, PartialEq, Debug)]\n").into()
+        format!("#[derive(Default, PartialEq, Debug{extra})]\n").into()
     }
 
     fn format_comment(&self, entity: &TupleStruct, gen: &Generator) -> String {
