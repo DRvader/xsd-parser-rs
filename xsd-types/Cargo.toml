@@ -17,7 +17,7 @@ num-bigint = "0.4"
 xml-rs = "0.8"
 xsd-macro-utils = { path = "../xsd-macro-utils" }
 yaserde = {path = "../../yaserde/yaserde"}
-
+popper = {path = "../../chime/crates/popper"}
 
 [dev-dependencies]
 yaserde_derive = {path = "../../yaserde/yaserde_derive"}

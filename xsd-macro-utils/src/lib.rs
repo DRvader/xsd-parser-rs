@@ -57,6 +57,14 @@ pub fn default_serde(input: TokenStream) -> TokenStream {
                 )
             }
         }
+
+        impl ::popper::XmlDeserialize for #struct_name {
+            fn xml_deserialize(
+                popper: &mut ::popper::XmlPopper,
+            ) -> ::std::result::Result<Self, ::popper::DeError> {
+                #struct_name::from_str(popper.pop_value()?.as_str()).map_err(|e| e.to_string().into())
+            }
+        }
     };
 
     serde.into()

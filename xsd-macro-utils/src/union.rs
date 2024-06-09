@@ -100,15 +100,13 @@ pub fn serde(ast: &syn::DeriveInput) -> syn::Result<TokenStream> {
             }
         }
 
-        impl XmlDeserialize for #struct_name {
+        impl ::popper::XmlDeserialize for #struct_name {
             fn xml_deserialize(
-                popper: &mut XmlPopper,
-            ) -> ::std::result::Result<Self, DeError> {
-                ::xsd_types::utils::xmlde::deserialize(popper, |s| {
-                    let s = popper.pop_child(stringify!(#struct_name_literal));
-                    #de_variants
-                    Err("No valid variant".to_string())
-                })
+                popper: &mut ::popper::XmlPopper,
+            ) -> ::std::result::Result<Self, ::popper::DeError> {
+                let s = popper.pop_child(stringify!(#struct_name_literal));
+                #de_variants
+                Err("No valid variant".to_string())
             }
         }
     })
