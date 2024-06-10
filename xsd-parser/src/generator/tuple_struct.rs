@@ -20,8 +20,20 @@ pub trait TupleStructGenerator {
             indent = gen.base().indent()
         );
 
+        let parse_gen = format!(
+            r#"impl std::str::FromStr for {name} {{
+type Err = std::convert::Infallible;
+{indent}fn from_str(s: &str) -> Result<Self, Self::Err> {{
+{indent}{indent}let output = {name}(s.parse().unwrap());
+{indent}{indent}Ok(output)
+{indent}}}
+}}"#,
+            indent = gen.base().indent(),
+            name = self.get_name(entity, gen)
+        );
+
         format!(
-            "{comment}{macros}pub struct {name} (pub {typename});\n{display_gen}\n{validation}\n{deserialize}\n{subtypes}\n",
+            "{comment}{macros}pub struct {name} (pub {typename});\n{display_gen}\n{parse_gen}\n{validation}\n{deserialize}\n{subtypes}\n",
             comment = self.format_comment(entity, gen),
             name = self.get_name(entity, gen),
             macros = self.macros(entity, gen),
