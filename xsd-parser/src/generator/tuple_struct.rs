@@ -26,7 +26,7 @@ pub trait TupleStructGenerator {
         format!(
             r#"impl XmlDeserialize for {typename} {{
               fn xml_deserialize(popper: &mut XmlPopper) -> Result<Self, DeError> {{
-            {typename}(popper.pop_child("{name}")?)
+            Ok({typename}(popper.pop_child("{name}")?))
         }}
     }}"#,
             typename = self.get_name(entity, gen),

@@ -8,12 +8,12 @@ pub trait EnumCaseGenerator {
         let typename = if entity.type_name.is_some() {
             let output = format!("({})", self.get_type_name(entity, gen));
             // if let Some(name) = &entity.type_name {
-                // This would be incorrectly treated as std::string::String
-                // if name == "string" {
-                //     output =
-                //         format!("(#[yaserde(force_struct)] {})", self.get_type_name(entity, gen));
-                // }
-           // }
+            // This would be incorrectly treated as std::string::String
+            // if name == "string" {
+            //     output =
+            //         format!("(#[yaserde(force_struct)] {})", self.get_type_name(entity, gen));
+            // }
+            // }
 
             output
         } else {
@@ -89,9 +89,9 @@ pub trait EnumCaseGenerator {
                 r#"
                 let value = popper.pop_value()?;
                 if value == "{}" {{
-                    core::option::Option::Some(value)
+                    core::result::Result::Ok(value)
                 }} else {{
-                    core::option::Option::None
+                    core::result::Result::Err(DeError::EnumMismatch)
                 }}
                 "#,
                 case.name
@@ -124,7 +124,12 @@ pub trait EnumCaseGenerator {
             if flatten {
                 case_getter = format!("{}::xml_deserialize(popper)", self.get_type_name(case, gen));
             } else if case_getter.is_empty() {
-                case_getter = format!("let inter = popper.pop_child(\"{}\")?;\nOk::<_, DeError>(inter)\n", case.name);
+                case_getter = format!(
+                    "let inter = popper.pop_child(\"{}\")?;\ncore::result::Result::Ok::<_, DeError>(inter)\n",
+                    case.name
+                );
+            } else {
+                case_getter.push_str("core::result::Result::Ok::<_, DeError>(inter)\n");
             }
 
             case_getter
