@@ -10,8 +10,18 @@ use crate::{
 
 pub trait TupleStructGenerator {
     fn generate(&self, entity: &TupleStruct, gen: &Generator) -> String {
+        let display_gen = format!(
+            r#"impl std::fmt::Display for {name} {{
+{indent}fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {{
+{indent}{indent}write!(f, "{{}}", self.0)
+{indent}}}
+}}"#,
+            name = self.get_name(entity, gen),
+            indent = gen.base().indent()
+        );
+
         format!(
-            "{comment}{macros}pub struct {name} (pub {typename});\n{validation}\n{deserialize}\n{subtypes}\n",
+            "{comment}{macros}pub struct {name} (pub {typename});\n{display_gen}\n{validation}\n{deserialize}\n{subtypes}\n",
             comment = self.format_comment(entity, gen),
             name = self.get_name(entity, gen),
             macros = self.macros(entity, gen),

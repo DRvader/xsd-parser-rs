@@ -85,8 +85,11 @@ pub trait EnumCaseGenerator {
         let case_getter = if case.source == EnumSource::Union || case.type_name.is_none() {
             // special case: we are just parsing the value
 
-            format!(
-                r#"
+            if case.type_name.is_some() {
+                format!("{}::xml_deserialize(popper)", self.get_type_name(case, gen))
+            } else {
+                format!(
+                    r#"
                 let value = popper.pop_value()?;
                 if value == "{}" {{
                     core::result::Result::Ok(value)
@@ -94,8 +97,9 @@ pub trait EnumCaseGenerator {
                     core::result::Result::Err(DeError::EnumMismatch)
                 }}
                 "#,
-                case.name
-            )
+                    case.name
+                )
+            }
         } else {
             let mut case_getter = String::new();
 
