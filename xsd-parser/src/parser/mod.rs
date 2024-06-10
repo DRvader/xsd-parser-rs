@@ -68,8 +68,18 @@ pub fn parse(text: &str) -> Result<RsFile, ()> {
         }
     }
 
-    let extended_types = extended_types.into_iter().filter(|f| !schema_rs.types.iter().any(|field|if let RsEntity::Struct(st) = field{ st.name == f.name} else {false})).collect::<Vec<_>>();
-    schema_rs.types.extend(extended_types.into_iter().map(|v| RsEntity::Struct(v)));
+    for ty in extended_types {
+        if schema_rs.types.iter().any(|field| {
+            if let RsEntity::Struct(st) = field {
+                st.name == ty.name
+            } else {
+                false
+            }
+        }) {
+            continue;
+        }
+        schema_rs.types.push(RsEntity::Struct(ty));
+    }
 
     Ok(schema_rs)
 }
