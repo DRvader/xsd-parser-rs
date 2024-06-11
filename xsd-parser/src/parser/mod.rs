@@ -62,7 +62,7 @@ pub fn parse(text: &str) -> Result<RsFile, ()> {
     let mut extended_types = Vec::new();
     for ty in &schema_rs.types {
         if let RsEntity::Struct(st) = ty {
-            extended_types.extend(st.extend_base(&map));
+            extended_types.extend(st.extend_base(&mut map));
             st.extend_attribute_group(&map);
             st.extend_group(&map);
         }

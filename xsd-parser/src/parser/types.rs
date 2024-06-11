@@ -73,14 +73,23 @@ impl Struct {
                 }
 
                 if !f.type_modifiers.is_empty() {
-                    extended_types.push((*types.get(&key).unwrap()).clone());
+                    // extended_types.push((*types.get(&key).unwrap()).clone());
+
+                    let ty = (*types.get(&key).unwrap()).clone();
+                    for field in ty.fields.borrow_mut().iter_mut() {
+                        if field.type_name == "part-group" {
+                            field.type_name = "super::PartGroup".to_string();
+                        }
+                    }
+
                     vec![StructField {
                         name: f.name.clone(),
                         type_name: types.get(&key).unwrap().name.clone(),
                         comment: f.comment.clone(),
                         type_modifiers: f.type_modifiers.clone(),
+                        subtypes: vec![RsEntity::Struct(ty)],
                         ..Default::default()
-                   }]
+                    }]
                 } else {
                     types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
                 }
@@ -104,7 +113,6 @@ impl Struct {
                     v.extend_attribute_group(types)
                 }
 
-
                 if !f.type_modifiers.is_empty() {
                     extended_types.push((*types.get(&key).unwrap()).clone());
                     vec![StructField {
@@ -113,7 +121,7 @@ impl Struct {
                         comment: f.comment.clone(),
                         type_modifiers: f.type_modifiers.clone(),
                         ..Default::default()
-                   }]
+                    }]
                 } else {
                     types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
                 }
@@ -182,7 +190,7 @@ impl Struct {
                         comment: f.comment.clone(),
                         type_modifiers: f.type_modifiers.clone(),
                         ..Default::default()
-                   }]
+                    }]
                 } else {
                     types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
                 }
@@ -215,7 +223,7 @@ impl Struct {
                         comment: f.comment.clone(),
                         type_modifiers: f.type_modifiers.clone(),
                         ..Default::default()
-                   }]
+                    }]
                 } else {
                     types.get(&key).map(|s| s.fields.borrow().clone()).unwrap_or_default()
                 }
@@ -331,7 +339,7 @@ pub struct Alias {
     pub original: String,
     pub comment: Option<String>,
     pub subtypes: Vec<RsEntity>,
-    pub type_modifiers: Vec<TypeModifier>
+    pub type_modifiers: Vec<TypeModifier>,
 }
 
 #[derive(Debug, Clone)]
