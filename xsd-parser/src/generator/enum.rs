@@ -115,10 +115,18 @@ type Err = std::convert::Infallible;
     }
 
     fn deserialize(&self, entity: &Enum, gen: &Generator) -> String {
+        let mod_name = self.mod_name(entity, gen);
+
         let mut cases = String::new();
         let mut case_gens = String::new();
-        for (index, case) in entity.cases.iter().enumerate() {
-            let (case_de, case_assign) = gen.enum_case_gen().deserialize(case, gen);
+        for (index, mut case) in entity.cases.iter().cloned().enumerate() {
+            if let Some(tn) = &mut case.type_name {
+                if !case.subtypes.is_empty() {
+                    *tn = format!("{}::{}", mod_name, gen.base().format_type_name(tn.as_str(), gen))
+                }
+            }
+
+            let (case_de, case_assign) = gen.enum_case_gen().deserialize(&case, gen);
 
             cases.push_str(&case_de);
 
