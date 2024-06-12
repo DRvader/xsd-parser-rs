@@ -152,11 +152,12 @@ type Err = std::convert::Infallible;
             case_gens.push_str(&case_gen);
         }
 
-        case_gens.push_str(
-            r#"_ => {
-            return Err(DeError::User("Found multiple possible matches".to_string()));
-        }"#,
-        );
+        case_gens.push_str(&format!(
+            r#"_ => {{
+            return Err(DeError::User("Found multiple possible matches {}".to_string()));
+        }}"#,
+            entity.name
+        ));
 
         format!(
             r#"
