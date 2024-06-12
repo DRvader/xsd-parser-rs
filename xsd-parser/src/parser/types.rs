@@ -299,6 +299,7 @@ pub struct Enum {
     pub comment: Option<String>,
     pub type_name: String,
     pub subtypes: Vec<RsEntity>,
+    pub type_modifiers: Vec<TypeModifier>,
     pub source: EnumSource,
 }
 
