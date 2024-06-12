@@ -162,7 +162,7 @@ type Err = std::convert::Infallible;
             r#"
             impl XmlDeserialize for {} {{
             fn xml_deserialize(outer_popper: &mut XmlPopper) -> Result<Self, DeError> {{
-                let mut popper = outer_popper.clone();
+                let mut popper = outer_popper.recursive_clone();
 
                 let results = ({cases});
 

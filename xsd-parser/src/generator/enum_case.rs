@@ -150,7 +150,7 @@ pub trait EnumCaseGenerator {
             format!(
                 r#"
                     {{
-                        let mut inter = popper.clone();
+                        let mut inter = popper.recursive_clone();
                         let result = |popper: &mut XmlPopper| {{
                             {case_getter}
                         }};

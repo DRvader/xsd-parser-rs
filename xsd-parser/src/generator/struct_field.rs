@@ -1,7 +1,5 @@
 use crate::{
-    generator::{
-        Generator,
-    },
+    generator::Generator,
     parser::types::{StructField, StructFieldSource, TypeModifier},
 };
 
@@ -129,7 +127,7 @@ pub trait StructFieldGenerator {
             // if unsuccessful we will just return without changing our primary popper.
             format!(
                 r#"
-                    let mut inter = popper.clone();
+                    let mut inter = popper.recursive_clone();
                     let result = |popper: &mut XmlPopper| {{
                             <{} as XmlDeserialize>::xml_deserialize(popper)
                     }};
