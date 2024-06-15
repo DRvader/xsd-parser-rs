@@ -114,7 +114,7 @@ pub trait StructGenerator {
     }
 
     fn macros(&self, _entity: &Struct, _gen: &Generator) -> Cow<'static, str> {
-        let derives = "#[derive(Default, PartialEq, Debug)]\n";
+        let derives = "#[derive(PartialEq, Debug)]\n";
         // let tns = gen.target_ns.borrow();
         // match tns.as_ref() {
         //     Some(tn) => match tn.name() {

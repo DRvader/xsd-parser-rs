@@ -8,7 +8,7 @@ use crate::{
 pub trait EnumGenerator {
     fn generate(&self, entity: &Enum, gen: &Generator) -> String {
         let name = self.get_name(entity, gen);
-        let default_case = format!(
+        let _default_case = format!(
             "impl Default for {name} {{\n\
             {indent}fn default() -> {name} {{\n\
             {indent}{indent}Self::__Unknown__(Default::default())\n\
@@ -61,7 +61,7 @@ pub trait EnumGenerator {
 {indent}fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {{
 {indent}{indent}write!(f, "{{}}", match &self {{
 {display_contents}
-{indent}{indent}{indent}Self::__Unknown__(val) => ::std::format!("__Unknown__({{val}})"),
+// {indent}{indent}{indent}Self::__Unknown__(val) => ::std::format!("__Unknown__({{val}})"),
 {indent}{indent}}})
 {indent}}}
 }}"#,
@@ -77,7 +77,7 @@ type Err = std::convert::Infallible;
 {indent}fn from_str(s: &str) -> Result<Self, Self::Err> {{
 {indent}{indent}let output = match s {{
 {parse_contents}
-{indent}{indent}{indent}val => Self::__Unknown__(<{typename} as std::str::FromStr>::from_str(val)?),
+// {indent}{indent}{indent}val => Self::__Unknown__(<{typename} as std::str::FromStr>::from_str(val)?),
 {indent}{indent}}};
 {indent}{indent}Ok(output)
 {indent}}}
@@ -93,21 +93,18 @@ type Err = std::convert::Infallible;
             "{comment}{macros}\n\
             pub enum {name} {{\n\
                 {cases}\n\
-                {indent}__Unknown__({typename}),\n\
             }}\n\n\
-            {default}\n\n\
             {display_enum}\n\n\
             {parse_enum}\n\n\
             {validation}\n\n\
             {deserialize}\n\n\
             {subtypes}\n\n",
-            indent = gen.base().indent(),
             comment = self.format_comment(entity, gen),
             macros = self.macros(entity, gen),
             name = name,
             cases = self.cases(entity, gen),
-            typename = self.get_type_name(entity, gen),
-            default = default_case,
+            // typename = self.get_type_name(entity, gen),
+            // default = default_case,
             subtypes = self.subtypes(entity, gen),
             validation = self.validation(entity, gen),
             deserialize = self.deserialize(entity, gen)
